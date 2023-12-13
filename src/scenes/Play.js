@@ -11,12 +11,12 @@ class Play extends Phaser.Scene {
         this.load.image('spaceBug', './assets/SpaceBug-0001.png');
         this.load.spritesheet('EmitterExplode', './assets/explodeEmittert.png', { frameWidth: 96, frameHeight: 96 ,endFrame: 3 });
 
-        
+        this.load.atlas('explodeEffect', './assets/explodeEffect.png', './assets/explodeEffect.json');
     }
     create(){
         // green UI background
         this.starfield = this.add.tileSprite(0,0, 640, 480, 'starfield').setOrigin(0, 0);
-        
+
         //tells us the x-position, y =position, width height,and akey string that tells us whcih image to use
         //and have to put this infront of the ui thing because it read from lowest to highest 
         this.add.rectangle(0, borderUISize + borderPadding, game.config.width, borderUISize * 2, 0x00FF00).setOrigin(0, 0);
@@ -74,10 +74,11 @@ class Play extends Phaser.Scene {
             },
             fixedWidth: 100
         }
-        
+
         this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2, this.p1Score, scoreConfig);
         // 60-second play clock
         this.scoreRight = this.add.text(game.config.width - scoreConfig.fixedWidth - borderUISize - borderPadding, borderUISize + borderPadding*2, this.p2Score, scoreConfig);
+
 
         this.gameOver = false;
         scoreConfig.fixedWidth = 0;
@@ -87,16 +88,16 @@ class Play extends Phaser.Scene {
             this.gameOver = true;
         }, null, this); // whats null this do here ?
     }
- 
-    
+
+
     update() {
         // update run every frame . -4 = will move 4 horizontal pixels left every frame 
         // to right = -  to left = +
         //One advantage of using a separate class to handle our 
         //player rocket is that we can keep class-specific code within the class itself.
-        
+
         // As we’ve already seen, Phaser runs a core update() loop that allows all game movements, animations,
-        
+
         if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyR)) {
             this.scene.start("menuScene");
          }
@@ -108,38 +109,38 @@ class Play extends Phaser.Scene {
         if(this.checkCollision(this.p1Rocket, this.ship03)) {
             this.p1Rocket.reset();
             this.shipExplode(this.ship03,this.p1Rocket);
-            
+
             //game.settings.gameTimer+= 1000;
           }
           if (this.checkCollision(this.p1Rocket, this.ship02)) {
             this.p1Rocket.reset();
-            
+
             this.shipExplode(this.ship02,this.p1Rocket);
             //game.settings.gameTimer+= 1000;
           }
           if (this.checkCollision(this.p1Rocket, this.ship01)) {
             this.p1Rocket.reset();
-            
+
             this.shipExplode(this.ship01,this.p1Rocket);
             //game.settings.gameTimer+= 5000;
           }
           if(this.checkCollision(this.p1Rocket,this.spaceBug)){
 
             this.p1Rocket.reset();
-         
+
             this.shipExplode(this.spaceBug);
-            
+
           }
-          if (!this.gameOver) {       
-            
-           // this.p1Rocket.y = this.input.mousePointer.y;          
+          if (!this.gameOver) {
+
+           // this.p1Rocket.y = this.input.mousePointer.y;
             this.p1Rocket.update();         // update rocket sprite
             this.ship01.update();           // update spaceships (x3)
             this.ship02.update();
             this.ship03.update();
             this.p2Rocket.update();
             this.spaceBug.update();
-        } 
+        }
         if(this.checkCollision(this.p2Rocket, this.ship03)) {
             this.p2Rocket.reset();
             this.shipExplode(this.ship03,this.p2Rocket);
@@ -156,19 +157,19 @@ class Play extends Phaser.Scene {
             this.p2Rocket.reset();
             this.shipExplode(this.spaceBug,this.p2Rocket);
         }
-    
- 
-    
 
-    
+
+
+
+
     }
     checkCollision(rocket, ship) {
         // simple AABB checking
-        if (rocket.x < ship.x + ship.width && 
-          rocket.x + rocket.width > ship.x && 
+        if (rocket.x < ship.x + ship.width &&
+          rocket.x + rocket.width > ship.x &&
           rocket.y < ship.y + ship.height &&
           rocket.height + rocket.y > ship. y) {
-          
+
           return true;
         } else {
           return false;
@@ -189,14 +190,30 @@ class Play extends Phaser.Scene {
           ship.reset();                         // reset ship position
           ship.alpha = 1;                       // make ship visible again
           boom.destroy();                       // remove explosion sprite
-        });       
-        let emitterBoom = this.add.sprite(ship.x, ship.y, 'EmitterExplode').setOrigin(0, 0);
-        emitterBoom.anims.play('EmitterExplo'); // play emitter explode animation
-        emitterBoom.on('animationcomplete', () => { // callback after anim completes
-          emitterBoom.destroy(); // remove emitter explosion sprite
-        
-        });          
-        
+        });
+         //  原来的代码 先注掉了
+        // let emitterBoom = this.add.sprite(ship.x, ship.y, 'EmitterExplode').setOrigin(0, 0);
+        // emitterBoom.anims.play('EmitterExplo'); // play emitter explode animation
+        // emitterBoom.on('animationcomplete', () => { // callback after anim completes
+        //   emitterBoom.destroy(); // remove emitter explosion sprite
+        // });
+
+          // explode emitter
+          let emitter = this.add.particles(100, 100, 'explodeEffect', {
+              frame: {frames: [], cycle: true}, // if have large mount of image , use frames
+              lifespan: 2000,  // animation duration
+              speed: {min: 50, max: 50}, // move out speed
+              scale: {start: 1.5, end: 0}, // image scale will begin with 1.5 ,end with 0
+              gravityY: 0, // anime flow down
+              blendMode: 'COLOR', // effect mix type
+              emitting: false
+          });
+
+          // when animation finished, destroy emitter
+          emitter.on('complete',()=>{
+              emitter.destroy()
+          })
+          emitter.explode(16,ship.x - 60,ship.y - 60)
 
         if (playerRocket === this.p1Rocket) { // difference bettwen == and === 
             this.p1Score += ship.points;      // == make sure the value equal to each other 
@@ -206,8 +223,8 @@ class Play extends Phaser.Scene {
             this.scoreRight.text = this.p2Score; // update player 2's score text
         }
 
-        this.scoreLeft.text = this.p1Score;  
+        this.scoreLeft.text = this.p1Score;
         this.sound.play('sfx_explosion');
       }
-      
+
 }
